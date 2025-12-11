@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PixelLift – AI Image Enhancement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+      "Segoe UI Symbol", "Noto Color Emoji";
+    }
+
+    /* Comparison slider visuals */
+    .compare-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+    .compare-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .compare-overlay {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .compare-handle {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.55);
+      pointer-events: none;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <button id="logo" class="flex items-center gap-2 cursor-pointer focus:outline-none">
+          <div class="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+            <!-- You can replace with your logo icon PNG -->
+            <span class="text-white font-bold text-sm">⚡</span>
+          </div>
+          <span class="font-bold text-lg tracking-tight">
+            Pixel<span class="text-emerald-600">Lift</span>
+          </span>
+        </button>
+
+        <!-- Optional: placeholder for future theme toggle / links -->
+        <div class="flex items-center gap-3 text-xs text-slate-500">
+          <span class="hidden sm:inline">Upscale · Restore · Enhance</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 max-w-6xl mx-auto px-4 py-8 pb-12">
+      <!-- ============== VIEW: UPLOAD ============== -->
+      <section id="view-upload" class="min-h-[70vh] flex items-center">
+        <div class="grid lg:grid-cols-2 gap-10 items-center w-full">
+          <!-- Left: Hero text & feature highlights -->
+          <div class="space-y-6">
+            <div>
+              <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+                Transform your photos<br class="hidden md:block" />
+                with <span class="text-emerald-600">AI precision</span>.
+              </h1>
+              <p class="text-slate-600 text-lg max-w-xl">
+                Upscale, restore, and enhance your images intelligently. Drag and drop to get started instantly.
+              </p>
+            </div>
+
+            <div class="grid sm:grid-cols-3 gap-3">
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <p class="text-xs font-semibold text-slate-500 uppercase mb-1">Smart Upscaling</p>
+                <p class="text-sm text-slate-700">Up to 4× effective resolution.</p>
+              </div>
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <p class="text-xs font-semibold text-slate-500 uppercase mb-1">Restoration</p>
+                <p class="text-sm text-slate-700">Fix old photos and remove noise.</p>
+              </div>
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <p class="text-xs font-semibold text-slate-500 uppercase mb-1">Detail Recovery</p>
+                <p class="text-sm text-slate-700">Sharpen edges & clarify text.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Upload card -->
+          <div>
+            <div
+              id="dropzone"
+              class="relative border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-sm flex flex-col items-center justify-center h-80 px-6 cursor-pointer transition-all duration-200 hover:border-slate-500 hover:shadow-md"
+            >
+              <div class="flex flex-col items-center">
+                <!-- Replace with your upload PNG if you like -->
+                <div class="mb-4 h-14 w-14 rounded-full border border-slate-200 flex items-center justify-center bg-slate-50 shadow-sm">
+                  <span class="text-2xl text-emerald-500">⬆</span>
+                </div>
+
+                <input
+                  type="file"
+                  id="file-input"
+                  class="hidden"
+                  accept="image/png,image/jpeg,image/webp"
+                />
+                <p class="font-semibold text-slate-900 text-lg mb-1">
+                  Click or drag image here
+                </p>
+                <p class="text-sm text-slate-500 mb-2">
+                  Supports JPG, PNG, WEBP. Up to 10&nbsp;MB.
+                </p>
+                <p id="upload-filename" class="text-xs text-emerald-600 font-medium"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== VIEW: CONFIGURE ============== -->
+      <section id="view-setup" class="hidden">
+        <div class="flex items-center justify-between mb-6 gap-4">
+          <button
+            id="back-to-upload"
+            class="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-emerald-600 transition-colors"
+          >
+            ← Start over
+          </button>
+          <p class="text-xs text-slate-500">
+            Step 2 of 3 · Configure Enhancement
+          </p>
+        </div>
+
+        <div class="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)] gap-8 items-start">
+          <!-- Left: Preview + file info -->
+          <div class="space-y-4">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-900">Preview</h2>
+                  <p class="text-xs text-slate-500">
+                    Make sure your image looks correct before enhancing.
+                  </p>
+                </div>
+              </div>
+
+              <div class="rounded-xl bg-slate-100 flex items-center justify-center aspect-[4/3] overflow-hidden">
+                <img
+                  id="setup-preview"
+                  src=""
+                  alt="Preview"
+                  class="max-w-full max-h-full object-contain"
+                />
+              </div>
+
+              <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                <div class="flex items-center gap-2">
+                  <!-- optional file icon image -->
+                  <div class="h-7 w-7 rounded-lg bg-slate-100 flex items-center justify-center text-[11px] font-semibold text-slate-500">
+                    IMG
+                  </div>
+                  <div>
+                    <p id="setup-name" class="font-medium text-slate-900 truncate max-w-[200px]">
+                      –
+                    </p>
+                    <p id="setup-dimensions" class="text-[11px] text-slate-500">
+                      –
+                    </p>
+                  </div>
+                </div>
+                <button
+                  class="text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                  onclick="document.getElementById('file-input').click()"
+                  type="button"
+                >
+                  Change image
+                </button>
+              </div>
+            </div>
+
+            <!-- Strength slider -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                    Enhancement Strength
+                  </p>
+                </div>
+                <span
+                  id="strength-label"
+                  class="text-xs font-mono bg-emerald-500/10 text-emerald-700 px-2.5 py-1 rounded-full"
+                  >50% (Balanced)</span
+                >
+              </div>
+              <input
+                id="strength-slider"
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+                class="w-full accent-emerald-500"
+              />
+              <div class="flex justify-between mt-2 text-[11px] text-slate-500">
+                <span>Subtle</span>
+                <span>Balanced</span>
+                <span>Aggressive</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Modes & action -->
+          <div class="space-y-4">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-900">Modes</h2>
+                  <p class="text-xs text-slate-500">
+                    Select the best mode for your image.
+                  </p>
+                </div>
+              </div>
+
+              <div id="mode-list" class="grid gap-3"></div>
+            </div>
+
+            <!-- Start button -->
+            <div class="flex flex-col items-stretch gap-2">
+              <button
+                id="start-enhance"
+                class="w-full h-12 rounded-lg bg-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Start Enhancement
+              </button>
+              <p class="text-[11px] text-slate-500 text-center">
+                We apply a mode-aware pipeline for Photo, Print, Document, Restoration and Product images.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== VIEW: RESULT ============== -->
+      <section id="view-result" class="hidden">
+        <div class="flex flex-wrap items-center justify-between mb-5 gap-3">
+          <div class="space-y-1">
+            <p class="text-xs font-semibold tracking-wide text-emerald-600 uppercase">
+              Enhancement Complete
+            </p>
+            <p id="result-headline" class="text-sm text-slate-600">
+              Processed with selected mode.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              id="back-to-setup"
+              class="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+            >
+              Adjust settings
+            </button>
+            <button
+              id="start-over-btn"
+              class="h-9 px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
+              type="button"
+            >
+              Start over
+            </button>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-6 items-start">
+          <!-- Left: comparison viewer -->
+          <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl h-[55vh] flex items-center justify-center">
+            <!-- Loading state -->
+            <div id="result-loading" class="flex flex-col items-center">
+              <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p class="text-white font-semibold mb-1">Enhancing image…</p>
+              <p class="text-xs text-slate-400">This may take a few seconds.</p>
+            </div>
+
+            <!-- Viewer -->
+            <div id="result-viewer" class="hidden w-full h-full p-4">
+              <div id="compare-wrapper" class="compare-wrapper w-full h-full bg-[#0f0f11] rounded-2xl flex items-center justify-center relative">
+                <!-- enhanced (after) -->
+                <img id="result-after" src="" alt="Enhanced" />
+                <!-- original overlay -->
+                <div id="compare-overlay" class="compare-overlay flex items-center justify-center">
+                  <img id="result-before" src="" alt="Original" />
+                  <div class="absolute top-3 left-3 bg-black/60 text-white text-[11px] px-2 py-1 rounded-full">
+                    Original
+                  </div>
+                </div>
+                <!-- enhanced label -->
+                <div class="absolute top-3 right-3 bg-emerald-500 text-white text-[11px] px-2 py-1 rounded-full">
+                  Enhanced
+                </div>
+
+                <!-- handle -->
+                <div id="compare-handle" class="compare-handle bg-white">
+                  ↔
+                </div>
+              </div>
+              <input
+                id="compare-slider"
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+                class="w-full mt-3 accent-emerald-500"
+              />
+            </div>
+          </div>
+
+          <!-- Right: summary + meta + download -->
+          <div class="space-y-4">
+            <div
+              id="summary-badge"
+              class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-4 text-sm text-slate-700"
+            >
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                Result Summary
+              </h3>
+              <p id="summary-text" class="text-sm text-slate-700 leading-snug">
+                –
+              </p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 text-xs text-slate-600 space-y-2">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                Output Details
+              </h3>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Resolution</span>
+                <span id="result-meta-resolution" class="font-mono text-slate-800">
+                  –
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Format</span>
+                <span id="result-meta-format" class="font-mono text-slate-800">
+                  –
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-2">
+                Downloads are saved locally to your device.
+              </p>
+            </div>
+
+            <button
+              id="download-btn"
+              class="w-full h-11 rounded-lg bg-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ⬇ Download result
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <p id="error-text" class="mt-4 text-sm text-rose-600 hidden"></p>
+    </main>
+  </div>
+
+  <script>
+    // ================== STATE ==================
+    const MODES = [
+      {
+        id: "photo",
+        name: "Photo Enhancer",
+        desc: "Better contrast, color & detail for everyday photos.",
+        icon: "icons/mode-photo.png", // adjust paths to your PNGs
+      },
+      {
+        id: "print",
+        name: "Smart Print",
+        desc: "Upscale and sharpen towards high-res print quality.",
+        icon: "icons/mode-print.png",
+      },
+      {
+        id: "doc",
+        name: "Document / OCR",
+        desc: "Clean text, remove shadows, and boost readability.",
+        icon: "icons/mode-doc.png",
+      },
+      {
+        id: "old",
+        name: "Restoration",
+        desc: "Reduce noise and revive faded tones in old photos.",
+        icon: "icons/mode-old.png",
+      },
+      {
+        id: "product",
+        name: "Product Clarity",
+        desc: "Sharpen edges and tidy backgrounds for e-commerce.",
+        icon: "icons/mode-product.png",
+      },
+    ];
+
+    let currentFile = null;
+    let previewURL = null;
+    let selectedMode = "photo";
+    let strength = 50;
+    let processedDataUrl = null;
+    let originalWidth = 0;
+    let originalHeight = 0;
+    let resultWidth = 0;
+    let resultHeight = 0;
+
+    // ================== VIEW HELPERS ==================
+    const viewUpload = document.getElementById("view-upload");
+    const viewSetup = document.getElementById("view-setup");
+    const viewResult = document.getElementById("view-result");
+    const errorText = document.getElementById("error-text");
+
+    function showView(name) {
+      viewUpload.classList.add("hidden");
+      viewSetup.classList.add("hidden");
+      viewResult.classList.add("hidden");
+
+      if (name === "upload") viewUpload.classList.remove("hidden");
+      if (name === "setup") viewSetup.classList.remove("hidden");
+      if (name === "result") viewResult.classList.remove("hidden");
+
+      errorText.classList.add("hidden");
+    }
+
+    function setError(msg) {
+      errorText.textContent = msg;
+      errorText.classList.remove("hidden");
+    }
+
+    // ================== UPLOAD HANDLING ==================
+    const fileInput = document.getElementById("file-input");
+    const dropzone = document.getElementById("dropzone");
+    const uploadFilename = document.getElementById("upload-filename");
+    const setupPreview = document.getElementById("setup-preview");
+    const setupName = document.getElementById("setup-name");
+    const setupDimensions = document.getElementById("setup-dimensions");
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        setError("Please upload a valid image (JPG, PNG, WEBP).");
+        return;
+      }
+      currentFile = file;
+      if (previewURL) URL.revokeObjectURL(previewURL);
+      previewURL = URL.createObjectURL(file);
+      uploadFilename.textContent = file.name;
+
+      const img = new Image();
+      img.onload = () => {
+        originalWidth = img.width;
+        originalHeight = img.height;
+        setupPreview.src = previewURL;
+        setupName.textContent = file.name;
+        setupDimensions.textContent = `${img.width} × ${img.height} px`;
+        strength = 50;
+        strengthSlider.value = 50;
+        strengthLabel.textContent = "50% (Balanced)";
+        selectedMode = "photo";
+        renderModes();
+        showView("setup");
+      };
+      img.src = previewURL;
+    }
+
+    dropzone.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", (e) => handleFile(e.target.files[0]));
+
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("border-emerald-500", "bg-emerald-50");
+    });
+    dropzone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("border-emerald-500", "bg-emerald-50");
+    });
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("border-emerald-500", "bg-emerald-50");
+      handleFile(e.dataTransfer.files[0]);
+    });
+
+    // ================== MODES ==================
+    const modeList = document.getElementById("mode-list");
+
+    function renderModes() {
+      modeList.innerHTML = "";
+      MODES.forEach((mode) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className =
+          "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition " +
+          (selectedMode === mode.id
+            ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500/50"
+            : "border-slate-200 bg-white hover:border-emerald-300");
+        btn.innerHTML = `
+          <div class="h-9 w-9 rounded-lg flex items-center justify-center ${
+            selectedMode === mode.id
+              ? "bg-emerald-500 shadow-md shadow-emerald-500/40"
+              : "bg-slate-100"
+          }">
+            ${
+              mode.icon
+                ? `<img src="${mode.icon}" alt="" class="h-5 w-5 object-contain ${
+                    selectedMode === mode.id ? "invert brightness-0" : ""
+                  }" />`
+                : `<span class="text-xs">AI</span>`
+            }
+          </div>
+          <div>
+            <p class="text-sm font-semibold ${
+              selectedMode === mode.id ? "text-slate-900" : "text-slate-900"
+            }">${mode.name}</p>
+            <p class="text-xs text-slate-500 mt-0.5">${mode.desc}</p>
+          </div>
+        `;
+        btn.addEventListener("click", () => {
+          selectedMode = mode.id;
+          renderModes();
+        });
+        modeList.appendChild(btn);
+      });
+    }
+
+    // ================== STRENGTH SLIDER ==================
+    const strengthSlider = document.getElementById("strength-slider");
+    const strengthLabel = document.getElementById("strength-label");
+
+    strengthSlider.addEventListener("input", () => {
+      strength = parseInt(strengthSlider.value, 10);
+      let label = "Balanced";
+      if (strength <= 30) label = "Subtle";
+      else if (strength >= 70) label = "Aggressive";
+      strengthLabel.textContent = `${strength}% (${label})`;
+    });
+
+    // ================== NAVIGATION BUTTONS ==================
+    document.getElementById("back-to-upload").addEventListener("click", () => {
+      resetAll();
+      showView("upload");
+    });
+
+    document.getElementById("back-to-setup").addEventListener("click", () => {
+      showView("setup");
+    });
+
+    document.getElementById("start-over-btn").addEventListener("click", () => {
+      resetAll();
+      showView("upload");
+    });
+
+    document.getElementById("logo").addEventListener("click", () => {
+      resetAll();
+      showView("upload");
+    });
+
+    function resetAll() {
+      currentFile = null;
+      if (previewURL) URL.revokeObjectURL(previewURL);
+      previewURL = null;
+      processedDataUrl = null;
+      uploadFilename.textContent = "";
+      setupPreview.src = "";
+      setupName.textContent = "–";
+      setupDimensions.textContent = "–";
+      summaryBadge.classList.add("hidden");
+      summaryText.textContent = "–";
+      resultMetaResolution.textContent = "–";
+      resultMetaFormat.textContent = "–";
+      resultHeadline.textContent = "Processed with selected mode.";
+      downloadBtn.disabled = true;
+    }
+
+    // ================== BACKEND CALL ==================
+    const startBtn = document.getElementById("start-enhance");
+    const loadingBox = document.getElementById("result-loading");
+    const viewerBox = document.getElementById("result-viewer");
+    const afterImg = document.getElementById("result-after");
+    const beforeImg = document.getElementById("result-before");
+    const compareOverlay = document.getElementById("compare-overlay");
+    const compareHandle = document.getElementById("compare-handle");
+    const compareSlider = document.getElementById("compare-slider");
+    const summaryBadge = document.getElementById("summary-badge");
+    const summaryText = document.getElementById("summary-text");
+    const downloadBtn = document.getElementById("download-btn");
+    const resultMetaResolution = document.getElementById("result-meta-resolution");
+    const resultMetaFormat = document.getElementById("result-meta-format");
+    const resultHeadline = document.getElementById("result-headline");
+
+    function updateCompare(pos) {
+      compareOverlay.style.width = pos + "%";
+      compareHandle.style.left = pos + "%";
+    }
+
+    compareSlider.addEventListener("input", () => {
+      updateCompare(compareSlider.value);
+    });
+
+    startBtn.addEventListener("click", async () => {
+      if (!currentFile) {
+        setError("Please upload an image first.");
+        return;
+      }
+
+      showView("result");
+      loadingBox.classList.remove("hidden");
+      viewerBox.classList.add("hidden");
+      summaryBadge.classList.add("hidden");
+      downloadBtn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("file", currentFile);
+        formData.append("mode", selectedMode);
+        formData.append("strength", String(strength));
+
+        const resp = await fetch("http://127.0.0.1:8000/api/enhance", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!resp.ok) {
+          throw new Error("Server error");
+        }
+
+        const data = await resp.json();
+        processedDataUrl = data.image_data;
+        resultWidth = data.width;
+        resultHeight = data.height;
+
+        // fill UI
+        afterImg.src = processedDataUrl;
+        beforeImg.src = previewURL;
+        summaryText.textContent = data.summary;
+        summaryBadge.classList.remove("hidden");
+
+        resultMetaResolution.textContent = `${originalWidth} × ${originalHeight} px → ${resultWidth} × ${resultHeight} px`;
+        resultMetaFormat.textContent = fileTypeToLabel(currentFile.type);
+        resultHeadline.textContent = `Processed with ${modeNameFromId(
+          selectedMode
+        )} at ${strength}% strength.`;
+
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = () => {
+          const a = document.createElement("a");
+          a.href = processedDataUrl;
+          a.download = "pixellift-enhanced.png";
+          a.click();
+        };
+
+        loadingBox.classList.add("hidden");
+        viewerBox.classList.remove("hidden");
+        compareSlider.value = 50;
+        updateCompare(50);
+      } catch (e) {
+        console.error(e);
+        setError("Failed to process image. Make sure the backend is running.");
+        showView("setup");
+      }
+    });
+
+    function modeNameFromId(id) {
+      const m = MODES.find((m) => m.id === id);
+      return m ? m.name : "selected mode";
+    }
+
+    function fileTypeToLabel(type) {
+      if (!type) return "Unknown";
+      if (type.includes("jpeg") || type.includes("jpg")) return "JPG";
+      if (type.includes("png")) return "PNG";
+      if (type.includes("webp")) return "WEBP";
+      return type.toUpperCase();
+    }
+
+    // ================== INIT ==================
+    renderModes();
+    showView("upload");
+  </script>
+</body>
+</html>

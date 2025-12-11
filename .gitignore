@@ -1,0 +1,7 @@
+venv/
+.pixellift-ai/
+__pycache__/
+frontend/node_modules/
+backend/__pycache__/
+backend/uploads/
+backend/weights/
