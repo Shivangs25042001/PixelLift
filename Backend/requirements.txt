@@ -1,11 +1,13 @@
 fastapi
 uvicorn[standard]
-python-multipart
 numpy
-opencv-python
+opencv-python-headless
+pydantic
+python-multipart
+
+torch
+torchvision
 realesrgan
 gfpgan
 basicsr
 facexlib
-torch
-torchvision
