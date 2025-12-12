@@ -5,6 +5,8 @@ import { ResultView } from "./components/PixelLift/ResultView";
 import { Layers, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./components/ui/button";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 function mapModeToBackend(mode: EnhancementMode): string {
   switch (mode) {
     case "photo-enhancer":
@@ -86,10 +88,11 @@ export default function App() {
     formData.append("strength", String(strength));          // 0–100
 
     // TALK TO PYTHON BACKEND HERE:
-    const resp = await fetch("http://127.0.0.1:8000/api/enhance", {
-      method: "POST",
-      body: formData,
-    });
+   const resp = await fetch(`${API_BASE_URL}/api/enhance`, {
+  method: "POST",
+  body: formData,
+});
+
 
     if (!resp.ok) {
       throw new Error("Server error");
@@ -112,7 +115,7 @@ export default function App() {
     setStep("result");
   } catch (error) {
     console.error(error);
-    alert("Failed to enhance image. Make sure Python is running on http://127.0.0.1:8000.");
+    alert("Failed to enhance image. Please try again in a moment.");
   } finally {
     setIsProcessing(false);
   }
